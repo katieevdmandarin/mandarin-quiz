@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>凱蒂生活華語：Day 1-30 挑戰</title>
+    <title>凱蒂生活華語：Day 1-30 挑戰 Katie Everyday Mandarin: Day 1–30 Challenge</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide-react/0.263.0/lucide-react.min.js"></script>
     <!-- Firebase SDKs -->
@@ -68,7 +68,7 @@
         window.startQuiz = async () => {
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
-            if(!name || !email) return alert('請填寫完整資訊');
+            if(!name || !email) return alert('請填寫完整資訊 Please fill in all required information');
             
             userData = { name, email };
             await signInAnonymously(auth);
@@ -137,7 +137,7 @@
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
             document.getElementById('final-score').innerText = `${score} / ${quizData.length}`;
-            document.getElementById('user-msg').innerText = `恭喜 ${userData.name}！手冊已準備好發送至 ${userData.email}`;
+            document.getElementById('user-msg').innerText = `恭喜 ${userData.name}！Congratulations!手冊已準備好發送至 The handbook is ready to be sent to ${userData.email}`;
         }
     </script>
     <style>
@@ -164,7 +164,7 @@
                     進入測驗 (Start)
                 </button>
             </div>
-            <p class="mt-4 text-[10px] text-slate-400 text-center">留下資訊即可領取 Day 1-30 完整單字手冊</p>
+            <p class="mt-4 text-[10px] text-slate-400 text-center">Leave your information to receive the complete Day 1–30 vocabulary handbook</p>
         </div>
 
         <!-- Quiz Screen -->
@@ -196,7 +196,7 @@
         </div>
 
         <div class="bg-slate-50 p-4 text-[10px] text-slate-400 text-center">
-            Katy's Life Mandarin © 2025 • Designed for Taiwan Living
+            Katie Everyday Mandarin © 2025 • Designed for Your Taiwan Survival Mandarin Projet
         </div>
     </div>
 
