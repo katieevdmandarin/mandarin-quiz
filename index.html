@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>凱蒂生活華語：Day 1-30 挑戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide-react/0.263.0/lucide-react.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+        // --- 請替換為您自己的 Firebase 配置 (可在 Firebase Console 找到) ---
+        // 注意：為了安全，建議在 Firebase Console 設定網域白名單 (GitHub 網址)
+        const firebaseConfig = {
+            apiKey: "", // 這裡留空，運行環境會自動注入或請填入您的 API Key
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
+        };
+
+        // 如果在我們的環境執行，會自動抓取 __firebase_config
+        const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'github-mandarin-quiz';
+
+        // 測驗資料
+        const quizData = [
+            {
+                question: "情境：當你聽不清楚，想請對方「再說一次」時，哪句華語最合適？",
+                multi: "ID: Anda ingin meminta seseorang mengulangi...\nVI: Bạn muốn yêu cầu ai đó nhắc lại...\nPH: Gusto mong pakiusap na ulitin...",
+                options: [
+                    { text: "這個可以再說一次嗎？", pinyin: "Zhè ge kě yǐ zài shuō yí cì ma?", en: "Can you say it again?", correct: true },
+                    { text: "這個多少錢？", pinyin: "Zhè ge duō shǎo qián?", en: "How much is it?", correct: false },
+                    { text: "你要去哪裡？", pinyin: "Nǐ yào qù nǎ lǐ?", en: "Where are you going?", correct: false }
+                ]
+            },
+            {
+                question: "情境：對方說話太快了，請他「說慢一點」的正確說法是？",
+                multi: "ID: Minta mereka bicara pelan...\nVI: Yêu cầu họ nói chậm lại...\nPH: Pakiusap na bagalan...",
+                options: [
+                    { text: "可以說快一點嗎？", pinyin: "Kě yǐ shuō kuài yì diǎn ma?", en: "Can you speak faster?", correct: false },
+                    { text: "可以說慢一點嗎？", pinyin: "Kě yǐ shuō màn yì diǎn ma?", en: "Can you speak more slowly?", correct: true },
+                    { text: "我聽到了。", pinyin: "Wǒ tīng dào le.", en: "I heard it.", correct: false }
+                ]
+            },
+            {
+                question: "情境：在工廠看到危險，要提醒同事「小心，危險！」時說？",
+                multi: "ID: Memperingatkan bahaya...\nVI: Cảnh báo nguy hiểm...\nPH: Babala sa panganib...",
+                options: [
+                    { text: "小心，危險！", pinyin: "Xiǎo xīn, wéi xiǎn!", en: "Watch out, danger!", correct: true },
+                    { text: "辛苦了。", pinyin: "Xīn kǔ le.", en: "Good work.", correct: false },
+                    { text: "早安。", pinyin: "Zǎo ān.", en: "Good morning.", correct: false }
+                ]
+            }
+        ];
+
+        let currentStep = 0;
+        let score = 0;
+        let userData = { name: '', email: '' };
+
+        window.startQuiz = async () => {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            if(!name || !email) return alert('請填寫完整資訊');
+            
+            userData = { name, email };
+            await signInAnonymously(auth);
+            
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            renderQuestion();
+        };
+
+        function renderQuestion() {
+            const q = quizData[currentStep];
+            document.getElementById('progress').style.width = `${((currentStep+1)/quizData.length)*100}%`;
+            document.getElementById('q-title').innerText = q.question;
+            document.getElementById('q-multi').innerText = q.multi;
+            
+            const optionsHtml = q.options.map((opt, idx) => `
+                <button onclick="handleAnswer(${opt.correct}, ${idx})" id="opt-${idx}" class="w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-indigo-200 transition-all">
+                    <div class="font-bold text-slate-800">${opt.text}</div>
+                    <div class="text-xs text-indigo-500 italic">${opt.pinyin}</div>
+                    <div class="text-[10px] text-slate-400 uppercase">${opt.en}</div>
+                </button>
+            `).join('');
+            document.getElementById('options-container').innerHTML = optionsHtml;
+        }
+
+        window.handleAnswer = async (isCorrect, idx) => {
+            const btns = document.querySelectorAll('#options-container button');
+            btns.forEach(b => b.disabled = true);
+            
+            const selected = document.getElementById(`opt-${idx}`);
+            if(isCorrect) {
+                selected.classList.add('border-emerald-500', 'bg-emerald-50');
+                score++;
+            } else {
+                selected.classList.add('border-rose-500', 'bg-rose-50');
+            }
+
+            setTimeout(async () => {
+                if(currentStep + 1 < quizData.length) {
+                    currentStep++;
+                    renderQuestion();
+                } else {
+                    await finishQuiz();
+                }
+            }, 1000);
+        };
+
+        async function finishQuiz() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+            
+            try {
+                // 儲存到 Firestore
+                const resultsRef = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+                await addDoc(resultsRef, {
+                    name: userData.name,
+                    email: userData.email,
+                    score: score,
+                    total: quizData.length,
+                    date: new Date().toISOString()
+                });
+            } catch(e) {
+                console.error(e);
+            }
+
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${score} / ${quizData.length}`;
+            document.getElementById('user-msg').innerText = `恭喜 ${userData.name}！手冊已準備好發送至 ${userData.email}`;
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-indigo-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold italic">凱蒂生活華語</h1>
+            <p class="text-indigo-100 text-xs tracking-widest uppercase mt-1">Day 1-30 Review Challenge</p>
+        </div>
+
+        <!-- Login Screen -->
+        <div id="login-screen" class="p-8">
+            <h2 class="text-xl font-bold text-slate-800 mb-6">開始複習測驗</h2>
+            <div class="space-y-4">
+                <input id="name" type="text" placeholder="您的姓名 / Name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input id="email" type="email" placeholder="您的 Email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                <button onclick="startQuiz()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all">
+                    進入測驗 (Start)
+                </button>
+            </div>
+            <p class="mt-4 text-[10px] text-slate-400 text-center">留下資訊即可領取 Day 1-30 完整單字手冊</p>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="p-8 hidden">
+            <div class="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
+                <div id="progress" class="bg-indigo-500 h-full transition-all w-0"></div>
+            </div>
+            <h3 id="q-title" class="text-lg font-bold text-slate-800 mb-2"></h3>
+            <div id="q-multi" class="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg mb-6 whitespace-pre-wrap border border-slate-100 italic"></div>
+            <div id="options-container" class="space-y-3"></div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="p-12 text-center hidden">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <p class="mt-4 text-slate-500">正在儲存結果...</p>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="p-8 text-center hidden">
+            <div class="text-5xl mb-4">🏆</div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">測驗完成！</h2>
+            <p id="user-msg" class="text-sm text-slate-500 mb-6"></p>
+            <div class="bg-indigo-50 rounded-2xl p-6 mb-6">
+                <div class="text-xs text-indigo-400 font-bold uppercase">Your Score</div>
+                <div id="final-score" class="text-4xl font-black text-indigo-600"></div>
+            </div>
+            <button onclick="window.location.reload()" class="text-indigo-600 font-bold text-sm underline">再測一次 (Try Again)</button>
+        </div>
+
+        <div class="bg-slate-50 p-4 text-[10px] text-slate-400 text-center">
+            Katy's Life Mandarin © 2025 • Designed for Taiwan Living
+        </div>
+    </div>
+
+</body>
+</html>
+
