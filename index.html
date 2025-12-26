@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>凱蒂生活華語：Day 1-30 挑戰 Katie Everyday Mandarin: Day 1–30 Challenge</title>
+    <title>Katie Everyday Mandarin - Day 1-30 Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide-react/0.263.0/lucide-react.min.js"></script>
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // --- 請替換為您自己的 Firebase 配置 (可在 Firebase Console 找到) ---
-        // 注意：為了安全，建議在 Firebase Console 設定網域白名單 (GitHub 網址)
+        // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "", // 這裡留空，運行環境會自動注入或請填入您的 API Key
+            apiKey: "", 
             authDomain: "",
             projectId: "",
             storageBucket: "",
@@ -23,41 +21,112 @@
             appId: ""
         };
 
-        // 如果在我們的環境執行，會自動抓取 __firebase_config
         const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
         const app = initializeApp(config);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'github-mandarin-quiz';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'katie-mandarin-quiz-v2';
 
-        // 測驗資料
         const quizData = [
             {
-                question: "情境：當你聽不清楚，想請對方「再說一次」時，哪句華語最合適？",
-                multi: "ID: Anda ingin meminta seseorang mengulangi...\nVI: Bạn muốn yêu cầu ai đó nhắc lại...\nPH: Gusto mong pakiusap na ulitin...",
+                question: "情境：當你聽不清楚，想請對方「再說一次」時...\nScenario: You want to ask someone to say it again...",
+                multi: "ID: Bisa diulang sekali lagi?\nVI: Có thể nói lại một lần nữa không?\nPH: Maaari mo bang ulitin?",
                 options: [
-                    { text: "這個可以再說一次嗎？", pinyin: "Zhè ge kě yǐ zài shuō yí cì ma?", en: "Can you say it again?", correct: true },
-                    { text: "這個多少錢？", pinyin: "Zhè ge duō shǎo qián?", en: "How much is it?", correct: false },
-                    { text: "你要去哪裡？", pinyin: "Nǐ yào qù nǎ lǐ?", en: "Where are you going?", correct: false }
-                ]
+                    { text: "這個可以再說一次嗎？", pinyin: "Zhè ge kě yǐ zài shuō yí cì ma?", correct: true },
+                    { text: "這個多少錢？", pinyin: "Zhè ge duō shǎo qián?", correct: false },
+                    { text: "你要去哪裡？", pinyin: "Nǐ yào qù nǎ lǐ?", correct: false }
+                ],
+                hint: "Keyword: 'zài' (again) & 'shuō' (say)"
             },
             {
-                question: "情境：對方說話太快了，請他「說慢一點」的正確說法是？",
-                multi: "ID: Minta mereka bicara pelan...\nVI: Yêu cầu họ nói chậm lại...\nPH: Pakiusap na bagalan...",
+                question: "情境：對方說話太快了，請他「說慢一點」...\nScenario: Someone is speaking too fast, ask them to slow down...",
+                multi: "ID: Bisa bicara lebih pelan?\nVI: Có thể nói chậm hơn không?\nPH: Maaari ka bang magsalita ng mas mabagal?",
                 options: [
-                    { text: "可以說快一點嗎？", pinyin: "Kě yǐ shuō kuài yì diǎn ma?", en: "Can you speak faster?", correct: false },
-                    { text: "可以說慢一點嗎？", pinyin: "Kě yǐ shuō màn yì diǎn ma?", en: "Can you speak more slowly?", correct: true },
-                    { text: "我聽到了。", pinyin: "Wǒ tīng dào le.", en: "I heard it.", correct: false }
-                ]
+                    { text: "可以說快一點嗎？", pinyin: "Kě yǐ shuō kuài yì diǎn ma?", correct: false },
+                    { text: "可以說慢一點嗎？", pinyin: "Kě yǐ shuō màn yì diǎn ma?", correct: true },
+                    { text: "我聽到了。", pinyin: "Wǒ tīng dào le.", correct: false }
+                ],
+                hint: "Focus: 'màn' (slow)"
             },
             {
-                question: "情境：在工廠看到危險，要提醒同事「小心，危險！」時說？",
-                multi: "ID: Memperingatkan bahaya...\nVI: Cảnh báo nguy hiểm...\nPH: Babala sa panganib...",
+                question: "情境：在工廠看到危險，要提醒同事「小心，危險！」時說？\nScenario: Warning a colleague about a danger at work...",
+                multi: "ID: Hati-hati, Bahaya!\nVI: Cẩn thận, Nguy hiểm!\nPH: Ingat, Delikado!",
                 options: [
-                    { text: "小心，危險！", pinyin: "Xiǎo xīn, wéi xiǎn!", en: "Watch out, danger!", correct: true },
-                    { text: "辛苦了。", pinyin: "Xīn kǔ le.", en: "Good work.", correct: false },
-                    { text: "早安。", pinyin: "Zǎo ān.", en: "Good morning.", correct: false }
-                ]
+                    { text: "小心，危險！", pinyin: "Xiǎo xīn, wéi xiǎn!", correct: true },
+                    { text: "辛苦了。", pinyin: "Xīn kǔ le.", correct: false },
+                    { text: "早安。", pinyin: "Zǎo ān.", correct: false }
+                ],
+                hint: "Keyword: 'Xiǎo xīn' (Watch out)"
+            },
+            {
+                question: "情境：當你不確定工具的操作方法，想問「這個要怎麼用？」...\nScenario: When you are not sure how to use a tool...",
+                multi: "ID: Bagaimana cara menggunakannya?\nVI: Cái này dùng như thế nào?\nPH: Paano gamitin ito?",
+                options: [
+                    { text: "這個要怎麼用？", pinyin: "Zhè ge yào zěn me yòng?", correct: true },
+                    { text: "你在做什麼？", pinyin: "Nǐ zài zuò shén me?", correct: false },
+                    { text: "現在幾點？", pinyin: "Xiàn zài jǐ diǎn?", correct: false }
+                ],
+                hint: "Keyword: 'yòng' (use)"
+            },
+            {
+                question: "情境：學會新技巧後，想對前輩說「謝謝你教我」...\nScenario: Thanking your mentor for teaching you a new skill...",
+                multi: "ID: Terima kasih sudah mengajari saya.\nVI: Cảm ơn bạn đã dạy tôi.\nPH: Salamat sa pagtuturo sa akin.",
+                options: [
+                    { text: "謝謝你教我。", pinyin: "Xiè xiè nǐ jiāo wǒ.", correct: true },
+                    { text: "不客氣。", pinyin: "Bú kè qì.", correct: false },
+                    { text: "沒關係。", pinyin: "Méi guān xì.", correct: false }
+                ],
+                hint: "Keyword: 'jiāo' (teach)"
+            },
+            {
+                question: "情境：當你工作遇到困難，想請同事「幫我一下」...\nScenario: When you need help and want to say 'Help me a bit'...",
+                multi: "ID: Bisa bantu saya sebentar?\nVI: Giúp tôi một chút được không?\nPH: Maaari mo ba akong tulungan sandali?",
+                options: [
+                    { text: "你可以幫我一下嗎？", pinyin: "Nǐ kě yǐ bāng wǒ yí xià ma?", correct: true },
+                    { text: "你要幫忙嗎？", pinyin: "Nǐ yào bāng máng ma?", correct: false },
+                    { text: "他在哪裡？", pinyin: "Tā zài nǎ lǐ?", correct: false }
+                ],
+                hint: "Keyword: 'bāng' (help)"
+            },
+            {
+                question: "情境：當你完成工作，要告訴主管「我做好了」...\nScenario: Telling your supervisor 'I have finished'...",
+                multi: "ID: Saya sudah selesai.\nVI: Tôi làm xong rồi.\nPH: Tapos ko na.",
+                options: [
+                    { text: "我還沒做。", pinyin: "Wǒ hái méi zuò.", correct: false },
+                    { text: "我做好了。", pinyin: "Wǒ zuò hǎo le.", correct: true },
+                    { text: "我不做了。", pinyin: "Wǒ bú zuò le.", correct: false }
+                ],
+                hint: "Keyword: 'hǎo' (done/finished)"
+            },
+            {
+                question: "情境：工作出錯時，誠懇地向主管說「對不起，我會改進」...\nScenario: Apologizing for a mistake and saying 'I will improve'...",
+                multi: "ID: Maaf, saya akan memperbaikinya.\nVI: Xin lỗi, tôi sẽ cải thiện.\nPH: Paumanhin, magpapabuti ako.",
+                options: [
+                    { text: "對不起，我會改進。", pinyin: "Duì bù qǐ, wǒ huì gǎi jìn.", correct: true },
+                    { text: "對不起，我不知道。", pinyin: "Duì bù qǐ, wǒ bù zhī dào.", correct: false },
+                    { text: "這不是我做的。", pinyin: "Zhè bú shì wǒ zuò de.", correct: false }
+                ],
+                hint: "Keyword: 'gǎi jìn' (improve)"
+            },
+            {
+                question: "情境：下班時，有禮貌地向同事打招呼說「明天見」...\nScenario: Saying 'See you tomorrow' when leaving work...",
+                multi: "ID: Sampai jumpa besok.\nVI: Hẹn gặp lại ngày mai.\nPH: Kita tayo bukas.",
+                options: [
+                    { text: "明天見。", pinyin: "Míng tiān jiàn.", correct: true },
+                    { text: "再見。", pinyin: "Zài jiàn.", correct: false },
+                    { text: "昨天見。", pinyin: "Zuó tiān jiàn.", correct: false }
+                ],
+                hint: "Keyword: 'Míng tiān' (tomorrow)"
+            },
+            {
+                question: "情境：在路邊想問路，開頭要有禮貌地說「請問...」...\nScenario: Polite way to start a question, 'Excuse me, may I ask...'?",
+                multi: "ID: Permisi, boleh tanya...?\nVI: Xin hỏi...?\nPH: Maaari bang magtanong...?",
+                options: [
+                    { text: "對不起。", pinyin: "Duì bù qǐ.", correct: false },
+                    { text: "請問...", pinyin: "Qǐng wèn...", correct: true },
+                    { text: "沒關係。", pinyin: "Méi guān xì.", correct: false }
+                ],
+                hint: "Keyword: 'Qǐng wèn' (May I ask)"
             }
         ];
 
@@ -68,7 +137,7 @@
         window.startQuiz = async () => {
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
-            if(!name || !email) return alert('請填寫完整資訊 Please fill in all required information');
+            if(!name || !email) return alert('請填寫完整資訊 / Please fill in all information');
             
             userData = { name, email };
             await signInAnonymously(auth);
@@ -83,12 +152,12 @@
             document.getElementById('progress').style.width = `${((currentStep+1)/quizData.length)*100}%`;
             document.getElementById('q-title').innerText = q.question;
             document.getElementById('q-multi').innerText = q.multi;
+            document.getElementById('q-hint').innerText = "💡 Hint: " + q.hint;
             
             const optionsHtml = q.options.map((opt, idx) => `
-                <button onclick="handleAnswer(${opt.correct}, ${idx})" id="opt-${idx}" class="w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-indigo-200 transition-all">
-                    <div class="font-bold text-slate-800">${opt.text}</div>
-                    <div class="text-xs text-indigo-500 italic">${opt.pinyin}</div>
-                    <div class="text-[10px] text-slate-400 uppercase">${opt.en}</div>
+                <button onclick="handleAnswer(${opt.correct}, ${idx})" id="opt-${idx}" class="w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-indigo-200 transition-all shadow-sm">
+                    <div class="font-bold text-slate-800 text-lg">${opt.text}</div>
+                    <div class="text-sm text-indigo-600 italic font-medium">${opt.pinyin}</div>
                 </button>
             `).join('');
             document.getElementById('options-container').innerHTML = optionsHtml;
@@ -100,10 +169,12 @@
             
             const selected = document.getElementById(`opt-${idx}`);
             if(isCorrect) {
-                selected.classList.add('border-emerald-500', 'bg-emerald-50');
+                selected.classList.replace('border-slate-100', 'border-emerald-500');
+                selected.classList.add('bg-emerald-50');
                 score++;
             } else {
-                selected.classList.add('border-rose-500', 'bg-rose-50');
+                selected.classList.replace('border-slate-100', 'border-rose-500');
+                selected.classList.add('bg-rose-50');
             }
 
             setTimeout(async () => {
@@ -121,7 +192,6 @@
             document.getElementById('loading-screen').classList.remove('hidden');
             
             try {
-                // 儲存到 Firestore
                 const resultsRef = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
                 await addDoc(resultsRef, {
                     name: userData.name,
@@ -130,73 +200,101 @@
                     total: quizData.length,
                     date: new Date().toISOString()
                 });
-            } catch(e) {
-                console.error(e);
-            }
+            } catch(e) { console.error(e); }
 
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
             document.getElementById('final-score').innerText = `${score} / ${quizData.length}`;
-            document.getElementById('user-msg').innerText = `恭喜 ${userData.name}！Congratulations!手冊已準備好發送至 The handbook is ready to be sent to ${userData.email}`;
+            document.getElementById('user-msg').innerHTML = `恭喜 ${userData.name}！<br>單字表已準備好發送至：<br><span class="text-indigo-600 font-bold">${userData.email}</span>`;
+            document.getElementById('user-msg-en').innerText = `Congratulations! The Vocabulary List is ready to be sent to your email.`;
         }
     </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .hidden { display: none; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
 
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
         <!-- Header -->
-        <div class="bg-indigo-600 p-6 text-white text-center">
-            <h1 class="text-2xl font-bold italic">凱蒂生活華語</h1>
-            <p class="text-indigo-100 text-xs tracking-widest uppercase mt-1">Day 1-30 Review Challenge</p>
+        <div class="bg-indigo-600 p-8 text-white text-center">
+            <h1 class="text-2xl font-extrabold tracking-tight">Katie Everyday Mandarin</h1>
+            <p class="text-indigo-100 text-[10px] tracking-[0.2em] uppercase mt-2 font-bold">Day 1-30 Multilingual Review</p>
         </div>
 
         <!-- Login Screen -->
         <div id="login-screen" class="p-8">
-            <h2 class="text-xl font-bold text-slate-800 mb-6">開始複習測驗</h2>
+            <h2 class="text-xl font-bold text-slate-800">開始複習測驗</h2>
+            <p class="text-slate-400 text-sm mb-6 font-medium">Start Review Quiz</p>
+            
             <div class="space-y-4">
-                <input id="name" type="text" placeholder="您的姓名 / Name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                <input id="email" type="email" placeholder="您的 Email" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                <button onclick="startQuiz()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all">
-                    進入測驗 (Start)
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">姓名 / Full Name</label>
+                    <input id="name" type="text" placeholder="e.g. Katie Chen" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">電子郵件 / Email Address</label>
+                    <input id="email" type="email" placeholder="name@example.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                </div>
+                <button onclick="startQuiz()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all active:scale-[0.98] mt-4">
+                    進入測驗 / Start Quiz
                 </button>
             </div>
-            <p class="mt-4 text-[10px] text-slate-400 text-center">Leave your information to receive the complete Day 1–30 vocabulary handbook</p>
+            <div class="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100 text-center">
+                <p class="text-[10px] text-amber-700 leading-relaxed font-medium">
+                    完成測驗即可領取 Day 1-30 完整單字表<br>
+                    Complete the quiz to receive the full Day 1-30 Vocabulary List.
+                </p>
+            </div>
         </div>
 
         <!-- Quiz Screen -->
         <div id="quiz-screen" class="p-8 hidden">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Progress</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Day 1-30 Review</span>
+            </div>
             <div class="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
                 <div id="progress" class="bg-indigo-500 h-full transition-all w-0"></div>
             </div>
-            <h3 id="q-title" class="text-lg font-bold text-slate-800 mb-2"></h3>
-            <div id="q-multi" class="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg mb-6 whitespace-pre-wrap border border-slate-100 italic"></div>
-            <div id="options-container" class="space-y-3"></div>
+            
+            <h3 id="q-title" class="text-lg font-bold text-slate-800 mb-2 leading-tight whitespace-pre-line"></h3>
+            <div id="q-multi" class="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl mb-4 whitespace-pre-wrap border border-slate-100 italic leading-relaxed"></div>
+            
+            <div id="options-container" class="space-y-3 mb-6"></div>
+            
+            <div id="q-hint" class="text-[10px] text-amber-600 font-bold bg-amber-50 p-2 rounded-lg text-center"></div>
         </div>
 
         <!-- Loading Screen -->
         <div id="loading-screen" class="p-12 text-center hidden">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p class="mt-4 text-slate-500">正在儲存結果...</p>
+            <p class="mt-4 text-slate-500 font-bold text-sm uppercase tracking-widest">Saving Results...</p>
         </div>
 
         <!-- Result Screen -->
         <div id="result-screen" class="p-8 text-center hidden">
-            <div class="text-5xl mb-4">🏆</div>
-            <h2 class="text-2xl font-bold text-slate-800 mb-2">測驗完成！</h2>
-            <p id="user-msg" class="text-sm text-slate-500 mb-6"></p>
-            <div class="bg-indigo-50 rounded-2xl p-6 mb-6">
-                <div class="text-xs text-indigo-400 font-bold uppercase">Your Score</div>
+            <div class="text-5xl mb-4">🎉</div>
+            <h2 class="text-2xl font-bold text-slate-800">測驗完成！</h2>
+            <p class="text-slate-400 text-xs font-bold uppercase mb-6 tracking-widest">Quiz Completed</p>
+            
+            <p id="user-msg" class="text-sm text-slate-600 mb-2 leading-relaxed"></p>
+            <p id="user-msg-en" class="text-[10px] text-slate-400 italic mb-6"></p>
+            
+            <div class="bg-indigo-50 rounded-2xl p-6 mb-6 border border-indigo-100 text-center">
+                <div class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mb-1">Total Score / 總分</div>
                 <div id="final-score" class="text-4xl font-black text-indigo-600"></div>
             </div>
-            <button onclick="window.location.reload()" class="text-indigo-600 font-bold text-sm underline">再測一次 (Try Again)</button>
+            <button onclick="window.location.reload()" class="text-indigo-600 font-bold text-sm hover:underline">
+                再測一次 / Try Again
+            </button>
         </div>
 
-        <div class="bg-slate-50 p-4 text-[10px] text-slate-400 text-center">
-            Katie Everyday Mandarin © 2025 • Designed for Your Taiwan Survival Mandarin Projet
+        <div class="bg-slate-50 p-6 text-[10px] text-slate-400 text-center border-t border-slate-100">
+            <strong>Katie Everyday Mandarin</strong> © 2025<br>
+            <span class="opacity-70">Empowering your life in Taiwan through language.</span>
         </div>
     </div>
 
