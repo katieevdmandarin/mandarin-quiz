@@ -5,15 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Katie Everyday Mandarin - Day 1-30 Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide-react/0.263.0/lucide-react.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // Firebase Configuration (請確認您的 Firebase Console 配置)
+        // --- 1. Firebase 配置 (請在此填入您的實作配置) ---
         const firebaseConfig = {
-  apiKey: "AIzaSyDVDEEvvYjDJDUVkwG6tdDwRETXMiXmzsA",
+            apiKey: "AIzaSyDVDEEvvYjDJDUVkwG6tdDwRETXMiXmzsA",
   authDomain: "katie-mandarin.firebaseapp.com",
   projectId: "katie-mandarin",
   storageBucket: "katie-mandarin.firebasestorage.app",
@@ -22,13 +21,21 @@
   measurementId: "G-TY4DQT7VWZ"
         };
 
-        const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-        const app = initializeApp(config);
+        const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'katie-mandarin-official-quiz';
+        const appId = 'katie-everyday-mandarin-v1';
 
-        // 根據 CSV 內容嚴格校對的 10 題題庫
+        // 狀態管理
+        let currentStep = 0;
+        let score = 0;
+        let userData = { name: '', email: '' };
+        let adminClickCount = 0;
+
+        // --- 2. 管理員密碼設定 ---
+        const ADMIN_PASSWORD = "@Katie20251231"; 
+
+        // 題庫資料
         const quizData = [
             {
                 question: "情境：當你聽不清楚，想請對方「再說一次」時...\nScenario: You want to ask someone to say it again...",
@@ -38,7 +45,7 @@
                     { text: "這個多少錢？", pinyin: "Zhè ge duō shǎo qián?", correct: false },
                     { text: "你要去哪裡？", pinyin: "Nǐ yào qù nǎ lǐ?", correct: false }
                 ],
-                hint: "Keyword: 'zài' (again) & 'shuō' (say)"
+                hint: "Day 3"
             },
             {
                 question: "情境：對方說話太快了，請他「說慢一點」...\nScenario: Someone is speaking too fast, ask them to slow down...",
@@ -48,102 +55,88 @@
                     { text: "可以說慢一點嗎？", pinyin: "Kě yǐ shuō màn yì diǎn ma?", correct: true },
                     { text: "我聽到了。", pinyin: "Wǒ tīng dào le.", correct: false }
                 ],
-                hint: "Focus: 'màn' (slow)"
-            },
-            {
-                question: "情境：在工廠看到危險，要提醒同事「小心」時說？\nScenario: Warning a colleague about a danger at work...",
-                multi: "🇮🇩 Hati-hati!\n🇻🇳 Cẩn thận!\n🇵🇭 Ingat!",
-                options: [
-                    { text: "小心！", pinyin: "Xiǎo xīn!", correct: true },
-                    { text: "辛苦了。", pinyin: "Xīn kǔ le.", correct: false },
-                    { text: "謝謝你。", pinyin: "Xiè xiè nǐ.", correct: false }
-                ],
-                hint: "Keyword: 'Xiǎo xīn' (Watch out)"
-            },
-            {
-                question: "情境：當你不確定工具的操作方法，想問「這個要怎麼用？」...\nScenario: When you are not sure how to use a tool...",
-                multi: "🇮🇩 Bagaimana cara menggunakannya?\n🇻🇳 Cái này dùng như thế nào?\n🇵🇭 Paano gamitin ito?",
-                options: [
-                    { text: "這個要怎麼用？", pinyin: "Zhè ge yào zěn me yòng?", correct: true },
-                    { text: "你在做什麼？", pinyin: "Nǐ zài zuò shén me?", correct: false },
-                    { text: "現在幾點？", pinyin: "Xiàn zài jǐ diǎn?", correct: false }
-                ],
-                hint: "Keyword: 'yòng' (use)"
-            },
-            {
-                question: "情境：想請同事幫忙時，有禮貌地問「可以幫我一下嗎？」...\nScenario: Politely asking a colleague for help...",
-                multi: "🇮🇩 Bisa bantu saya sebentar?\n🇻🇳 Giúp tôi một chút được không?\n🇵🇭 Maaari mo ba akong tulungan sandali?",
-                options: [
-                    { text: "你可以幫我一下嗎？", pinyin: "Nǐ kě yǐ bāng wǒ yí xià ma?", correct: true },
-                    { text: "你在哪裡？", pinyin: "Nǐ zài nǎ lǐ?", correct: false },
-                    { text: "我要幫你。", pinyin: "Wǒ yào bāng nǐ.", correct: false }
-                ],
-                hint: "Keyword: 'bāng' (help)"
-            },
-            {
-                question: "情境：當你完成工作，要告訴主管「我做好了」...\nScenario: Telling your supervisor 'I have finished'...",
-                multi: "🇮🇩 Saya sudah selesai.\n🇻🇳 Tôi làm xong rồi.\n🇵🇭 Tapos ko na.",
-                options: [
-                    { text: "我還沒做。", pinyin: "Wǒ hái méi zuò.", correct: false },
-                    { text: "我做好了。", pinyin: "Wǒ zuò hǎo le.", correct: true },
-                    { text: "我不做了。", pinyin: "Wǒ bú zuò le.", correct: false }
-                ],
-                hint: "Keyword: 'zuò hǎo' (finished)"
-            },
-            {
-                question: "情境：想詢問更好的做法，問「這樣做比較好嗎？」...\nScenario: Asking for a better way, 'Is this way better?'...",
-                multi: "🇮🇩 Apakah cara ini lebih baik?\n🇻🇳 Cách này tốt hơn không?\n🇵🇭 Mas maganda ba kung ganito ang gawin?",
-                options: [
-                    { text: "這樣做比較好嗎？", pinyin: "Zhè yàng zuò bǐ jiào hǎo ma?", correct: true },
-                    { text: "我不喜歡這樣。", pinyin: "Wǒ bù xǐ huān zhè yàng.", correct: false },
-                    { text: "你在做什麼？", pinyin: "Nǐ zài zuò shén me?", correct: false }
-                ],
-                hint: "Day 26: 'bǐ jiào hǎo' (better)"
-            },
-            {
-                question: "情境：當你學會新技巧，想對老師或前輩說「謝謝你教我」...\nScenario: Thanking someone for teaching you...",
-                multi: "🇮🇩 Terima kasih sudah mengajari saya.\n🇻🇳 Cảm ơn bạn đã dạy tôi.\n🇵🇭 Salamat sa pagtuturo sa akin.",
-                options: [
-                    { text: "謝謝你教我。", pinyin: "Xiè xiè nǐ jiāo wǒ.", correct: true },
-                    { text: "不客氣。", pinyin: "Bú kè qì.", correct: false },
-                    { text: "沒關係。", pinyin: "Méi guān xì.", correct: false }
-                ],
-                hint: "Day 28: 'jiāo' (teach)"
-            },
-            {
-                question: "情境：下班要離開時，對同事說「明天見」...\nScenario: Saying 'See you tomorrow' when leaving...",
-                multi: "🇮🇩 Sampai jumpa besok.\n🇻🇳 Hẹn gặp lại ngày mai.\n🇵🇭 Kita tayo bukas.",
-                options: [
-                    { text: "明天見。", pinyin: "Míng tiān jiàn.", correct: true },
-                    { text: "再見。", pinyin: "Zài jiàn.", correct: false },
-                    { text: "今天見。", pinyin: "Jīn tiān jiàn.", correct: false }
-                ],
-                hint: "Keyword: 'Míng tiān' (tomorrow)"
+                hint: "Day 4"
             },
             {
                 question: "情境：想請教問題前，最有禮貌的開頭是？\nScenario: The most polite way to start a question...",
-                multi: "🇮🇩 Permisi, boleh tanya...?\n🇻🇳 Xin hỏi...?\n🇵🇭 Maaari bang magtanong...?",
+                multi: "🇮🇩 Permisi... 🇻🇳 Xin hỏi... 🇵🇭 Maaari...",
                 options: [
                     { text: "請問...", pinyin: "Qǐng wèn...", correct: true },
                     { text: "對不起。", pinyin: "Duì bù qǐ.", correct: false },
                     { text: "餵！", pinyin: "Wèi!", correct: false }
                 ],
-                hint: "Day 1: 'Qǐng wèn' (May I ask)"
+                hint: "Day 1"
             }
         ];
 
-        let currentStep = 0;
-        let score = 0;
-        let userData = { name: '', email: '' };
+        // 隱藏管理員入口
+        window.triggerAdmin = () => {
+            adminClickCount++;
+            if (adminClickCount === 5) {
+                const pass = prompt("管理員登入 / Admin Login：");
+                if (pass === ADMIN_PASSWORD) {
+                    showAdminPanel();
+                } else if (pass !== null) {
+                    alert("密碼錯誤 / Incorrect Password");
+                    adminClickCount = 0;
+                }
+            }
+        };
 
-        window.startQuiz = async () => {
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            if(!name || !email) return alert('請填寫完整資訊 / Please fill in all information');
-            
+        async function showAdminPanel() {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById('admin-panel').classList.remove('hidden');
+            await loadRecords();
+        }
+
+        async function loadRecords() {
+            const listEl = document.getElementById('record-list');
+            listEl.innerHTML = '<div class="p-8 text-center text-slate-400">Loading...</div>';
+            try {
+                await signInAnonymously(auth);
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+                const snap = await getDocs(colRef);
+                const data = [];
+                snap.forEach(doc => data.push(doc.data()));
+                window.cachedData = data;
+
+                listEl.innerHTML = data.map(r => `
+                    <div class="p-4 border-b flex justify-between items-center text-sm">
+                        <div>
+                            <div class="font-bold text-slate-800">${r.name}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${r.email}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-indigo-600 font-black">${r.score}/${r.total}</div>
+                            <div class="text-[9px] text-slate-300 font-bold">${r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString() : ''}</div>
+                        </div>
+                    </div>
+                `).join('') || '<p class="p-8 text-center text-slate-400 uppercase text-[10px] font-bold">No records found</p>';
+            } catch (e) {
+                listEl.innerHTML = `<p class="p-4 text-rose-500 text-xs">Error: ${e.message}</p>`;
+            }
+        }
+
+        window.downloadCSV = () => {
+            if(!window.cachedData) return;
+            let csv = "\ufeffName,Email,Score,Total,Date\n";
+            window.cachedData.forEach(r => {
+                const date = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString() : '';
+                csv += `"${r.name}","${r.email}",${r.score},${r.total},"${date}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Katie_Student_List_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        };
+
+        // 測驗控制
+        window.startQuiz = () => {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            if(!name || !email) return alert("請填寫姓名與電子郵件 / Please fill in name and email");
             userData = { name, email };
-            await signInAnonymously(auth);
-            
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('quiz-screen').classList.remove('hidden');
             renderQuestion();
@@ -151,153 +144,151 @@
 
         function renderQuestion() {
             const q = quizData[currentStep];
-            document.getElementById('progress').style.width = `${((currentStep+1)/quizData.length)*100}%`;
+            document.getElementById('progress-bar').style.width = `${((currentStep+1)/quizData.length)*100}%`;
             document.getElementById('q-title').innerText = q.question;
             document.getElementById('q-multi').innerText = q.multi;
             document.getElementById('q-hint').innerText = "💡 Hint: " + q.hint;
-            
-            const optionsHtml = q.options.map((opt, idx) => `
+            document.getElementById('options-container').innerHTML = q.options.map((opt, idx) => `
                 <button onclick="handleAnswer(${opt.correct}, ${idx})" id="opt-${idx}" class="w-full text-left p-4 rounded-xl border-2 border-slate-100 hover:border-indigo-200 transition-all shadow-sm">
                     <div class="font-bold text-slate-800 text-lg">${opt.text}</div>
                     <div class="text-sm text-indigo-600 italic font-medium">${opt.pinyin}</div>
                 </button>
             `).join('');
-            document.getElementById('options-container').innerHTML = optionsHtml;
         }
 
-        window.handleAnswer = async (isCorrect, idx) => {
+        window.handleAnswer = (isCorrect, idx) => {
             const btns = document.querySelectorAll('#options-container button');
             btns.forEach(b => b.disabled = true);
-            
-            const selected = document.getElementById(`opt-${idx}`);
+            const el = document.getElementById(`opt-${idx}`);
             if(isCorrect) {
-                selected.classList.replace('border-slate-100', 'border-emerald-500');
-                selected.classList.add('bg-emerald-50');
                 score++;
+                el.classList.add('bg-emerald-50', 'border-emerald-500');
             } else {
-                selected.classList.replace('border-slate-100', 'border-rose-500');
-                selected.classList.add('bg-rose-50');
+                el.classList.add('bg-rose-50', 'border-rose-500');
             }
-
             setTimeout(async () => {
                 if(currentStep + 1 < quizData.length) {
                     currentStep++;
                     renderQuestion();
                 } else {
-                    await finishQuiz();
+                    await finish();
                 }
-            }, 1000);
+            }, 800);
         };
 
-        async function finishQuiz() {
+        async function finish() {
             document.getElementById('quiz-screen').classList.add('hidden');
             document.getElementById('loading-screen').classList.remove('hidden');
-            
             try {
-                const resultsRef = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
-                await addDoc(resultsRef, {
-                    name: userData.name,
-                    email: userData.email,
-                    score: score,
-                    total: quizData.length,
-                    date: new Date().toISOString()
-                });
-            } catch(e) { console.error(e); }
-
+                await signInAnonymously(auth);
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'quiz_results');
+                await addDoc(colRef, { ...userData, score, total: quizData.length, createdAt: serverTimestamp() });
+            } catch (e) { console.error(e); }
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
             document.getElementById('final-score').innerText = `${score} / ${quizData.length}`;
-            document.getElementById('user-msg').innerHTML = `恭喜 ${userData.name}！<br>單字表已準備好發送至：<br><span class="text-indigo-600 font-bold">${userData.email}</span>`;
-            document.getElementById('user-msg-en').innerText = `Congratulations! The Vocabulary List is ready to be sent to your email.`;
+            document.getElementById('final-msg').innerText = `講義將發送至 / Vocab list will be sent to:\n${userData.email}`;
         }
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         .hidden { display: none; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
 
     <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
-        <!-- Header -->
-        <div class="bg-indigo-600 p-8 text-white text-center">
+        
+        <!-- Header (點擊此處 5 次進入後台) -->
+        <header onclick="triggerAdmin()" class="bg-indigo-600 p-8 text-white text-center cursor-default select-none">
             <h1 class="text-2xl font-extrabold tracking-tight italic">Katie Everyday Mandarin</h1>
-            <p class="text-indigo-100 text-[10px] tracking-[0.2em] uppercase mt-2 font-bold">Day 1-30 Multilingual Review</p>
-        </div>
+            <p class="text-indigo-100 text-[10px] tracking-[0.2em] uppercase mt-2 font-bold italic">Review Quiz & Student List</p>
+        </header>
 
-        <!-- Login Screen -->
-        <div id="login-screen" class="p-8">
-            <h2 class="text-xl font-bold text-slate-800">開始複習測驗</h2>
-            <p class="text-slate-400 text-sm mb-6 font-medium">Start Review Quiz</p>
+        <!-- 首頁 (中英對照版) -->
+        <section id="login-screen" class="p-8">
+            <div class="mb-6">
+                <h2 class="text-xl font-bold text-slate-800 italic">準備好領取講義了嗎？</h2>
+                <p class="text-slate-400 text-xs font-medium">Ready to get your vocabulary list?</p>
+            </div>
             
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">姓名 / Full Name</label>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1 text-left">姓名 / Name</label>
                     <input id="name" type="text" placeholder="e.g. Katie Chen" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">電子郵件 / Email Address</label>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1 text-left">電子郵件 / Email</label>
                     <input id="email" type="email" placeholder="name@example.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                 </div>
-                <button onclick="startQuiz()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all active:scale-[0.98] mt-4">
-                    進入測驗 / Start Quiz
+                <button onclick="startQuiz()" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all active:scale-[0.98] mt-2">
+                    開始測驗 / Start Quiz
                 </button>
             </div>
-            <div class="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100 text-center">
-                <p class="text-[10px] text-amber-700 leading-relaxed font-medium">
-                    完成測驗即可領取 Day 1-30 完整單字表<br>
-                    Complete the quiz to receive the full Day 1-30 Vocabulary List.
+
+            <div class="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                <p class="text-[10px] text-amber-700 leading-relaxed font-medium text-center italic">
+                    完成測驗即可獲得 Day 1-30 完整對照單字表。<br>
+                    Receive the full vocabulary list after completing the quiz.
                 </p>
             </div>
-        </div>
+        </section>
 
-        <!-- Quiz Screen -->
-        <div id="quiz-screen" class="p-8 hidden">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Progress</span>
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Question ${currentStep+1}/10</span>
+        <!-- 測驗介面 -->
+        <section id="quiz-screen" class="p-8 hidden text-left">
+            <div class="w-full bg-slate-100 h-1.5 rounded-full mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-indigo-500 h-full transition-all w-0"></div>
             </div>
-            <div class="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
-                <div id="progress" class="bg-indigo-500 h-full transition-all w-0"></div>
-            </div>
-            
-            <h3 id="q-title" class="text-lg font-bold text-slate-800 mb-2 leading-tight whitespace-pre-line"></h3>
-            <div id="q-multi" class="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl mb-4 whitespace-pre-wrap border border-slate-100 italic leading-relaxed"></div>
-            
-            <div id="options-container" class="space-y-3 mb-6"></div>
-            
-            <div id="q-hint" class="text-[10px] text-amber-600 font-bold bg-amber-50 p-2 rounded-lg text-center"></div>
-        </div>
+            <h3 id="q-title" class="text-lg font-bold text-slate-800 mb-2 min-h-[3rem] whitespace-pre-line leading-snug"></h3>
+            <div id="q-multi" class="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl mb-4 italic leading-relaxed whitespace-pre-line border border-slate-100"></div>
+            <div id="options-container" class="space-y-3"></div>
+            <div id="q-hint" class="mt-6 text-[10px] text-amber-600 font-bold bg-amber-50 p-2 rounded-lg text-center tracking-widest uppercase"></div>
+        </section>
 
-        <!-- Loading Screen -->
-        <div id="loading-screen" class="p-12 text-center hidden">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-            <p class="mt-4 text-slate-500 font-bold text-sm uppercase tracking-widest">Saving Results...</p>
-        </div>
+        <!-- 載入中 -->
+        <section id="loading-screen" class="p-12 text-center hidden">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mx-auto"></div>
+            <p class="mt-4 text-slate-400 text-[10px] font-bold uppercase tracking-widest">Saving Results...</p>
+        </section>
 
-        <!-- Result Screen -->
-        <div id="result-screen" class="p-8 text-center hidden">
+        <!-- 結果介面 -->
+        <section id="result-screen" class="p-8 text-center hidden">
             <div class="text-5xl mb-4">🎉</div>
-            <h2 class="text-2xl font-bold text-slate-800">測驗完成！</h2>
-            <p class="text-slate-400 text-xs font-bold uppercase mb-6 tracking-widest">Quiz Completed</p>
-            
-            <p id="user-msg" class="text-sm text-slate-600 mb-2 leading-relaxed"></p>
-            <p id="user-msg-en" class="text-[10px] text-slate-400 italic mb-6"></p>
-            
-            <div class="bg-indigo-50 rounded-2xl p-6 mb-6 border border-indigo-100 text-center">
-                <div class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mb-1">Total Score / 總分</div>
-                <div id="final-score" class="text-4xl font-black text-indigo-600"></div>
+            <h2 class="text-2xl font-bold text-slate-800 italic">測驗完成！ / Quiz Done!</h2>
+            <div class="bg-indigo-50 rounded-2xl p-6 my-6 border border-indigo-100">
+                <div class="text-[10px] text-indigo-400 font-bold uppercase mb-1">Total Score</div>
+                <div id="final-score" class="text-5xl font-black text-indigo-600 tracking-tighter"></div>
             </div>
-            <button onclick="window.location.reload()" class="text-indigo-600 font-bold text-sm hover:underline">
-                再測一次 / Try Again
-            </button>
-        </div>
+            <p id="final-msg" class="text-sm text-slate-500 mb-6 whitespace-pre-line"></p>
+            <button onclick="window.location.reload()" class="text-indigo-600 font-bold text-sm hover:underline italic">再測一次 / Try Again</button>
+        </section>
 
-        <div class="bg-slate-50 p-6 text-[10px] text-slate-400 text-center border-t border-slate-100">
-            <strong>Katie Everyday Mandarin</strong> © 2025<br>
-            <span class="opacity-70">Empowering your life in Taiwan through language.</span>
-        </div>
+        <!-- 管理面板 (後台) -->
+        <section id="admin-panel" class="p-6 hidden bg-slate-50 text-left">
+            <div class="flex justify-between items-end mb-4 px-1">
+                <div>
+                    <h2 class="font-black text-indigo-600 text-lg uppercase">Students</h2>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Admin Console</p>
+                </div>
+                <button onclick="window.location.reload()" class="text-[9px] text-slate-300 font-bold uppercase hover:text-slate-600">Logout</button>
+            </div>
+            <button onclick="downloadCSV()" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-md mb-4 text-sm flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors">
+                下載 CSV 名單 / Export CSV
+            </button>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-100 p-2 text-[9px] font-bold text-slate-400 text-center uppercase tracking-widest">Latest Records</div>
+                <div id="record-list" class="max-h-[350px] overflow-y-auto">
+                    <!-- 名單 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-slate-50 p-6 text-[10px] text-slate-400 text-center border-t border-slate-100">
+            <strong>KATIE EVERYDAY MANDARIN</strong> © 2025<br>
+            <span class="opacity-70 italic">Empowering your life in Taiwan.</span>
+        </footer>
     </div>
 
 </body>
