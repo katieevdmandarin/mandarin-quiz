@@ -11,7 +11,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // Firebase Configuration
+        // Firebase Configuration (請確認您的 Firebase Console 配置)
         const firebaseConfig = {
             apiKey: "", 
             authDomain: "",
@@ -25,12 +25,13 @@
         const app = initializeApp(config);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'katie-mandarin-quiz-v2';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'katie-mandarin-official-quiz';
 
+        // 根據 CSV 內容嚴格校對的 10 題題庫
         const quizData = [
             {
                 question: "情境：當你聽不清楚，想請對方「再說一次」時...\nScenario: You want to ask someone to say it again...",
-                multi: "ID: Bisa diulang sekali lagi?\nVI: Có thể nói lại một lần nữa không?\nPH: Maaari mo bang ulitin?",
+                multi: "🇮🇩 Bisa diulang sekali lagi?\n🇻🇳 Có thể nói lại một lần nữa không?\n🇵🇭 Maaari mo bang ulitin?",
                 options: [
                     { text: "這個可以再說一次嗎？", pinyin: "Zhè ge kě yǐ zài shuō yí cì ma?", correct: true },
                     { text: "這個多少錢？", pinyin: "Zhè ge duō shǎo qián?", correct: false },
@@ -40,7 +41,7 @@
             },
             {
                 question: "情境：對方說話太快了，請他「說慢一點」...\nScenario: Someone is speaking too fast, ask them to slow down...",
-                multi: "ID: Bisa bicara lebih pelan?\nVI: Có thể nói chậm hơn không?\nPH: Maaari ka bang magsalita ng mas mabagal?",
+                multi: "🇮🇩 Bisa bicara lebih pelan?\n🇻🇳 Có thể nói chậm hơn không?\n🇵🇭 Maaari ka bang magsalita ng mas mabagal?",
                 options: [
                     { text: "可以說快一點嗎？", pinyin: "Kě yǐ shuō kuài yì diǎn ma?", correct: false },
                     { text: "可以說慢一點嗎？", pinyin: "Kě yǐ shuō màn yì diǎn ma?", correct: true },
@@ -49,18 +50,18 @@
                 hint: "Focus: 'màn' (slow)"
             },
             {
-                question: "情境：在工廠看到危險，要提醒同事「小心，危險！」時說？\nScenario: Warning a colleague about a danger at work...",
-                multi: "ID: Hati-hati, Bahaya!\nVI: Cẩn thận, Nguy hiểm!\nPH: Ingat, Delikado!",
+                question: "情境：在工廠看到危險，要提醒同事「小心」時說？\nScenario: Warning a colleague about a danger at work...",
+                multi: "🇮🇩 Hati-hati!\n🇻🇳 Cẩn thận!\n🇵🇭 Ingat!",
                 options: [
-                    { text: "小心，危險！", pinyin: "Xiǎo xīn, wéi xiǎn!", correct: true },
+                    { text: "小心！", pinyin: "Xiǎo xīn!", correct: true },
                     { text: "辛苦了。", pinyin: "Xīn kǔ le.", correct: false },
-                    { text: "早安。", pinyin: "Zǎo ān.", correct: false }
+                    { text: "謝謝你。", pinyin: "Xiè xiè nǐ.", correct: false }
                 ],
                 hint: "Keyword: 'Xiǎo xīn' (Watch out)"
             },
             {
                 question: "情境：當你不確定工具的操作方法，想問「這個要怎麼用？」...\nScenario: When you are not sure how to use a tool...",
-                multi: "ID: Bagaimana cara menggunakannya?\nVI: Cái này dùng như thế nào?\nPH: Paano gamitin ito?",
+                multi: "🇮🇩 Bagaimana cara menggunakannya?\n🇻🇳 Cái này dùng như thế nào?\n🇵🇭 Paano gamitin ito?",
                 options: [
                     { text: "這個要怎麼用？", pinyin: "Zhè ge yào zěn me yòng?", correct: true },
                     { text: "你在做什麼？", pinyin: "Nǐ zài zuò shén me?", correct: false },
@@ -69,64 +70,64 @@
                 hint: "Keyword: 'yòng' (use)"
             },
             {
-                question: "情境：學會新技巧後，想對前輩說「謝謝你教我」...\nScenario: Thanking your mentor for teaching you a new skill...",
-                multi: "ID: Terima kasih sudah mengajari saya.\nVI: Cảm ơn bạn đã dạy tôi.\nPH: Salamat sa pagtuturo sa akin.",
-                options: [
-                    { text: "謝謝你教我。", pinyin: "Xiè xiè nǐ jiāo wǒ.", correct: true },
-                    { text: "不客氣。", pinyin: "Bú kè qì.", correct: false },
-                    { text: "沒關係。", pinyin: "Méi guān xì.", correct: false }
-                ],
-                hint: "Keyword: 'jiāo' (teach)"
-            },
-            {
-                question: "情境：當你工作遇到困難，想請同事「幫我一下」...\nScenario: When you need help and want to say 'Help me a bit'...",
-                multi: "ID: Bisa bantu saya sebentar?\nVI: Giúp tôi một chút được không?\nPH: Maaari mo ba akong tulungan sandali?",
+                question: "情境：想請同事幫忙時，有禮貌地問「可以幫我一下嗎？」...\nScenario: Politely asking a colleague for help...",
+                multi: "🇮🇩 Bisa bantu saya sebentar?\n🇻🇳 Giúp tôi một chút được không?\n🇵🇭 Maaari mo ba akong tulungan sandali?",
                 options: [
                     { text: "你可以幫我一下嗎？", pinyin: "Nǐ kě yǐ bāng wǒ yí xià ma?", correct: true },
-                    { text: "你要幫忙嗎？", pinyin: "Nǐ yào bāng máng ma?", correct: false },
-                    { text: "他在哪裡？", pinyin: "Tā zài nǎ lǐ?", correct: false }
+                    { text: "你在哪裡？", pinyin: "Nǐ zài nǎ lǐ?", correct: false },
+                    { text: "我要幫你。", pinyin: "Wǒ yào bāng nǐ.", correct: false }
                 ],
                 hint: "Keyword: 'bāng' (help)"
             },
             {
                 question: "情境：當你完成工作，要告訴主管「我做好了」...\nScenario: Telling your supervisor 'I have finished'...",
-                multi: "ID: Saya sudah selesai.\nVI: Tôi làm xong rồi.\nPH: Tapos ko na.",
+                multi: "🇮🇩 Saya sudah selesai.\n🇻🇳 Tôi làm xong rồi.\n🇵🇭 Tapos ko na.",
                 options: [
                     { text: "我還沒做。", pinyin: "Wǒ hái méi zuò.", correct: false },
                     { text: "我做好了。", pinyin: "Wǒ zuò hǎo le.", correct: true },
                     { text: "我不做了。", pinyin: "Wǒ bú zuò le.", correct: false }
                 ],
-                hint: "Keyword: 'hǎo' (done/finished)"
+                hint: "Keyword: 'zuò hǎo' (finished)"
             },
             {
-                question: "情境：工作出錯時，誠懇地向主管說「對不起，我會改進」...\nScenario: Apologizing for a mistake and saying 'I will improve'...",
-                multi: "ID: Maaf, saya akan memperbaikinya.\nVI: Xin lỗi, tôi sẽ cải thiện.\nPH: Paumanhin, magpapabuti ako.",
+                question: "情境：想詢問更好的做法，問「這樣做比較好嗎？」...\nScenario: Asking for a better way, 'Is this way better?'...",
+                multi: "🇮🇩 Apakah cara ini lebih baik?\n🇻🇳 Cách này tốt hơn không?\n🇵🇭 Mas maganda ba kung ganito ang gawin?",
                 options: [
-                    { text: "對不起，我會改進。", pinyin: "Duì bù qǐ, wǒ huì gǎi jìn.", correct: true },
-                    { text: "對不起，我不知道。", pinyin: "Duì bù qǐ, wǒ bù zhī dào.", correct: false },
-                    { text: "這不是我做的。", pinyin: "Zhè bú shì wǒ zuò de.", correct: false }
+                    { text: "這樣做比較好嗎？", pinyin: "Zhè yàng zuò bǐ jiào hǎo ma?", correct: true },
+                    { text: "我不喜歡這樣。", pinyin: "Wǒ bù xǐ huān zhè yàng.", correct: false },
+                    { text: "你在做什麼？", pinyin: "Nǐ zài zuò shén me?", correct: false }
                 ],
-                hint: "Keyword: 'gǎi jìn' (improve)"
+                hint: "Day 26: 'bǐ jiào hǎo' (better)"
             },
             {
-                question: "情境：下班時，有禮貌地向同事打招呼說「明天見」...\nScenario: Saying 'See you tomorrow' when leaving work...",
-                multi: "ID: Sampai jumpa besok.\nVI: Hẹn gặp lại ngày mai.\nPH: Kita tayo bukas.",
+                question: "情境：當你學會新技巧，想對老師或前輩說「謝謝你教我」...\nScenario: Thanking someone for teaching you...",
+                multi: "🇮🇩 Terima kasih sudah mengajari saya.\n🇻🇳 Cảm ơn bạn đã dạy tôi.\n🇵🇭 Salamat sa pagtuturo sa akin.",
+                options: [
+                    { text: "謝謝你教我。", pinyin: "Xiè xiè nǐ jiāo wǒ.", correct: true },
+                    { text: "不客氣。", pinyin: "Bú kè qì.", correct: false },
+                    { text: "沒關係。", pinyin: "Méi guān xì.", correct: false }
+                ],
+                hint: "Day 28: 'jiāo' (teach)"
+            },
+            {
+                question: "情境：下班要離開時，對同事說「明天見」...\nScenario: Saying 'See you tomorrow' when leaving...",
+                multi: "🇮🇩 Sampai jumpa besok.\n🇻🇳 Hẹn gặp lại ngày mai.\n🇵🇭 Kita tayo bukas.",
                 options: [
                     { text: "明天見。", pinyin: "Míng tiān jiàn.", correct: true },
                     { text: "再見。", pinyin: "Zài jiàn.", correct: false },
-                    { text: "昨天見。", pinyin: "Zuó tiān jiàn.", correct: false }
+                    { text: "今天見。", pinyin: "Jīn tiān jiàn.", correct: false }
                 ],
                 hint: "Keyword: 'Míng tiān' (tomorrow)"
             },
             {
-                question: "情境：在路邊想問路，開頭要有禮貌地說「請問...」...\nScenario: Polite way to start a question, 'Excuse me, may I ask...'?",
-                multi: "ID: Permisi, boleh tanya...?\nVI: Xin hỏi...?\nPH: Maaari bang magtanong...?",
+                question: "情境：想請教問題前，最有禮貌的開頭是？\nScenario: The most polite way to start a question...",
+                multi: "🇮🇩 Permisi, boleh tanya...?\n🇻🇳 Xin hỏi...?\n🇵🇭 Maaari bang magtanong...?",
                 options: [
-                    { text: "對不起。", pinyin: "Duì bù qǐ.", correct: false },
                     { text: "請問...", pinyin: "Qǐng wèn...", correct: true },
-                    { text: "沒關係。", pinyin: "Méi guān xì.", correct: false }
+                    { text: "對不起。", pinyin: "Duì bù qǐ.", correct: false },
+                    { text: "餵！", pinyin: "Wèi!", correct: false }
                 ],
-                hint: "Keyword: 'Qǐng wèn' (May I ask)"
+                hint: "Day 1: 'Qǐng wèn' (May I ask)"
             }
         ];
 
@@ -220,7 +221,7 @@
     <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
         <!-- Header -->
         <div class="bg-indigo-600 p-8 text-white text-center">
-            <h1 class="text-2xl font-extrabold tracking-tight">Katie Everyday Mandarin</h1>
+            <h1 class="text-2xl font-extrabold tracking-tight italic">Katie Everyday Mandarin</h1>
             <p class="text-indigo-100 text-[10px] tracking-[0.2em] uppercase mt-2 font-bold">Day 1-30 Multilingual Review</p>
         </div>
 
@@ -254,7 +255,7 @@
         <div id="quiz-screen" class="p-8 hidden">
             <div class="flex justify-between items-center mb-2">
                 <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Progress</span>
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Day 1-30 Review</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Question ${currentStep+1}/10</span>
             </div>
             <div class="w-full bg-slate-100 h-2 rounded-full mb-6 overflow-hidden">
                 <div id="progress" class="bg-indigo-500 h-full transition-all w-0"></div>
